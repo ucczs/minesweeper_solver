@@ -9,3 +9,7 @@ Planned improvements:
 - easy change for different size of map
 - scan screen automatically for map
 - improve performance by scanning map just once and extract infos from this scan
+- stop script when all bombs are found
+- if it's not possible to find a field to open with logic, the solver should open a field randomly
+- if a 9 field touches a 0 field (which is not possible) change the parameter of the scanning
+- optimize recognition of the numbers (color?)

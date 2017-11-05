@@ -36,6 +36,12 @@ correlation_res_5 = [[0 for x in range(number_fields)] for y in range(number_fie
 
 result = [[0 for x in range(number_fields)] for y in range(number_fields)] 
 mines = [[0 for x in range(number_fields)] for y in range(number_fields)]
+not_found_bombs = [[0 for x in range(number_fields)] for y in range(number_fields)]
+
+# function for plotting the map
+def print_map(result):
+    for i in range(number_fields):
+        print(result[:][i]) 
 
 # process image:
 # convert colour space and define if the field is hidden or already opened
@@ -43,9 +49,9 @@ mines = [[0 for x in range(number_fields)] for y in range(number_fields)]
 def process_img(original_img):
     processed_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2RGB)
 
-    # calculate histogram and decide if field is still covered (9) or zero bombs
-    hist = cv2.calcHist([processed_img], [2], None, [8],[0, 256])
-    if hist[-1] < 10:
+    # get color value and decide if field is open or closed
+    color_value = processed_img[int(y_size/2),int(x_size/4)]
+    if color_value[-1] < 200:
         field_type = 9
     else:
         field_type = 0
@@ -105,11 +111,11 @@ def get_touching_fields(number_array, searching_for, x_pos, y_pos):
     return found_pos   
 
 # Load templates of numbers
-template_1 = cv2.imread('D:/Dropbox/Programmieren/Python/Minesweeper_Solver/Templates/1.png',0)
-template_2 = cv2.imread('D:/Dropbox/Programmieren/Python/Minesweeper_Solver/Templates/2.png',0)
-template_3 = cv2.imread('D:/Dropbox/Programmieren/Python/Minesweeper_Solver/Templates/3.png',0)
-template_4 = cv2.imread('D:/Dropbox/Programmieren/Python/Minesweeper_Solver/Templates/4.png',0)
-template_5 = cv2.imread('D:/Dropbox/Programmieren/Python/Minesweeper_Solver/Templates/5.png',0)
+template_1 = cv2.imread('Templates/1.png',0)
+template_2 = cv2.imread('Templates/2.png',0)
+template_3 = cv2.imread('Templates/3.png',0)
+template_4 = cv2.imread('Templates/4.png',0)
+template_5 = cv2.imread('Templates/5.png',0)
 
 x_start=random.randrange(9)
 y_start=random.randrange(9)
@@ -138,7 +144,7 @@ while(True):
         result[counter_y][counter_x] = field_cat
 
         #print('Loop took {} seconds'.format(time.time()-last_time))
-        print('y: ' + str(counter_y) + ', x: ' + str(counter_x))
+        #print('y: ' + str(counter_y) + ', x: ' + str(counter_x))
         last_time = time.time()
         
 
@@ -151,7 +157,7 @@ while(True):
 
         # save field as png
         if SAVE_IMAGES:
-            file = 'D:/Dropbox/Programmieren/Python/Minesweeper_Solver/Extract_fields/field_' + str(counter_y) + '_' + str(counter_x) + '.png'
+            file = 'Extract_fields/field_' + str(counter_y) + '_' + str(counter_x) + '.png'
             cv2.imwrite(file,new_screen)
 
         # correlation with 1
@@ -186,13 +192,12 @@ while(True):
         if counter_y > 8:
             counter_y = 0
             counter_x = counter_x+1
+            print('y: ' + str(counter_y) + ', x: ' + str(counter_x))
             if counter_x > 8:
                 break
 
-
     for x in range(number_fields):
         for y in range(number_fields):
-
             if correlation_res_5[y][x] > 3000000:
                 result[y][x] = 5
 
@@ -205,8 +210,19 @@ while(True):
             if correlation_res_2[y][x] > 3000000:
                 result[y][x] = 2
 
-            if correlation_res_1[y][x] > 2300000:
+            if correlation_res_1[y][x] > 2000000:
                 result[y][x] = 1
+
+    # if a 9 is touching a 0 (which is not possible), lower the threshold of the recognition
+    for x in range(number_fields):
+        for y in range(number_fields):
+            if result[y][x] == 0 and (count_surrounding(result, 0, x, y) > 0 or count_surrounding(result, 10, x, y) > 0):
+                print('####### Error in detecting the map! ########')
+                break
+        else:
+            continue
+        break
+            
 
 
     # when a shown number touches the same number of hidden fields, these fields are bombs
@@ -244,22 +260,53 @@ while(True):
     # ist, dann öffne alle felder die außerhalb der 
     # schnittmenge der kleineren zahl
 
-    # Lösungsalgo 3
-    # wenn zwei benachbarten und zahlen minus bomben gleich
-    # wenn angrenzende felder der einen zahl teilmenge der angrenzenden felder der anderen
-    # zahl
-    # dann öffne felder die außerhalb der teilmenge liegen            
 
-    # algo 3:
-    # finde nachbarn, die gleiche (zahl-bomben) haben
-    #   create list with number of not discovered bombs
-    #   take this list to find candidates for this algo
-    # for i in range(number_fields):
-    #     for j in range(number_fields):
-
+    # solving algorithm 1:
+    # find neighbours which have the same number minus bombs
     # get coordinates of touching 9's
-    # wenn kleinere anzahl von koordinaten von 9's komplett im anderen liste enthalten ist
-    # öffne alle felder von größerer anzahl, die nicht enthalten ist
+    # if coordinates of touching 9's from one field are a subset of the coordinates
+    # of the touching 9's from the other field
+    # all other touching fields can be opened 
 
-    for i in range(number_fields):
-        print(result[:][i]) 
+    # create list with number of not discovered bombs
+    found_candidates = []
+    for y in range(number_fields):
+        for x in range(number_fields):
+            if result[y][x]<9 and result[y][x]>0:
+                not_found_bombs[y][x] = result[y][x] - count_surrounding(result, 10, x, y)
+            else:
+                not_found_bombs[y][x] = result[y][x]
+
+    # find candidates for this solving algo (same number - bombs)
+    for y in range(number_fields):
+        for x in range(number_fields):
+            if not_found_bombs[y][x]<9 and not_found_bombs[y][x]>0:
+                found_candidates.append([y, x])
+                found_candidates.append(get_touching_fields(not_found_bombs, not_found_bombs[y][x], x, y))
+
+    # check if touching 9's of one field is a subset of the other touching 9's
+    for i in range(0,len(found_candidates),2):  
+        for element_cand in found_candidates[i+1]:
+            part_1 = found_candidates[i]
+            part_2 = element_cand
+
+            touching_1 = get_touching_fields(result, 9, part_1[1], part_1[0])
+            touching_2 = get_touching_fields(result, 9, part_2[1], part_2[0])
+
+            if len(touching_1) > len(touching_2):
+                bigger_touching = touching_1
+                smaller_touching = touching_2
+            else:
+                bigger_touching = touching_2
+                smaller_touching = touching_1
+
+            counter_elements = 0
+            for element_touch_small in smaller_touching:
+                if element_touch_small in bigger_touching:
+                    counter_elements = counter_elements + 1
+            if counter_elements == len(smaller_touching):
+                for element_open in bigger_touching:
+                    if element_open not in smaller_touching:
+                        click_field(element_open[1], element_open[0])
+
+    print_map(result)

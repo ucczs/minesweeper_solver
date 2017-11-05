@@ -1,4 +1,4 @@
-# optimierung:
+# optimierung (german):
 # bessere Lösungsalgorithmen
 # wenn es gar nicht mehr geht raten
 # performance verbessern (gesamtes feld scannen und daraus infos extrahieren)

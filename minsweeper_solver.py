@@ -38,6 +38,17 @@ result = [[0 for x in range(number_fields)] for y in range(number_fields)]
 mines = [[0 for x in range(number_fields)] for y in range(number_fields)]
 not_found_bombs = [[0 for x in range(number_fields)] for y in range(number_fields)]
 
+def get_screen(x1=0,y1=0,x2=0,y2=0):
+    if x2>0 and y2>0:
+        screen = np.array(ImageGrab.grab(bbox=(x1,y1,x2,y2)))
+    else:
+        screen = np.array(ImageGrab.grab())
+    
+    if SHOW_RAW_IMAGE:
+        cv2.imshow('color img', screen)    
+
+    return screen
+
 # function for plotting the map
 def print_map(result):
     for i in range(number_fields):
@@ -131,15 +142,15 @@ while(True):
     while(True):
         
         # each field
-        screen = np.array(ImageGrab.grab(bbox=(227+counter_x*x_size,155+y_size*counter_y,285+counter_x*x_size,214+y_size*counter_y)))
+        screen = get_screen(227+counter_x*x_size,155+y_size*counter_y,285+counter_x*x_size,214+y_size*counter_y)
 
         # all fields
-        #screen = np.array(ImageGrab.grab(bbox=(227,157,733,665)))
+        #screen = get_screen((227,157,733,665)
         # links [0]  rechts [2]
         # oben [1]  unten [3]
 
         # process image and determine if field is still covered (9) or 0 bombs
-        new_screen, field_cat = process_img(screen)
+        processed_screen, field_cat = process_img(screen)
 
         result[counter_y][counter_x] = field_cat
 
@@ -149,7 +160,7 @@ while(True):
         
 
         if SHOW_PROCESSED_IMAGE:
-            cv2.imshow('window', new_screen)
+            cv2.imshow('window', processed_screen)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
@@ -158,26 +169,26 @@ while(True):
         # save field as png
         if SAVE_IMAGES:
             file = 'Extract_fields/field_' + str(counter_y) + '_' + str(counter_x) + '.png'
-            cv2.imwrite(file,new_screen)
+            cv2.imwrite(file,processed_screen)
 
         # correlation with 1
-        res_1 = cv2.matchTemplate(new_screen,template_1,cv2.TM_CCOEFF)
+        res_1 = cv2.matchTemplate(processed_screen,template_1,cv2.TM_CCOEFF)
         min_val, max_val_1, min_loc, max_loc = cv2.minMaxLoc(res_1)
 
         # correlation with 2
-        res_2 = cv2.matchTemplate(new_screen,template_2,cv2.TM_CCOEFF)
+        res_2 = cv2.matchTemplate(processed_screen,template_2,cv2.TM_CCOEFF)
         min_val, max_val_2, min_loc, max_loc = cv2.minMaxLoc(res_2)
 
         # correlation with 3
-        res_3 = cv2.matchTemplate(new_screen,template_3,cv2.TM_CCOEFF)
+        res_3 = cv2.matchTemplate(processed_screen,template_3,cv2.TM_CCOEFF)
         min_val, max_val_3, min_loc, max_loc = cv2.minMaxLoc(res_3) 
 
         # correlation with 4
-        res_4 = cv2.matchTemplate(new_screen,template_4,cv2.TM_CCOEFF)
+        res_4 = cv2.matchTemplate(processed_screen,template_4,cv2.TM_CCOEFF)
         min_val, max_val_4, min_loc, max_loc = cv2.minMaxLoc(res_4)       
 
         # correlation with 5
-        res_5 = cv2.matchTemplate(new_screen,template_5,cv2.TM_CCOEFF)
+        res_5 = cv2.matchTemplate(processed_screen,template_5,cv2.TM_CCOEFF)
         min_val, max_val_5, min_loc, max_loc = cv2.minMaxLoc(res_5) 
 
         correlation_res_1[counter_y][counter_x] = max_val_1

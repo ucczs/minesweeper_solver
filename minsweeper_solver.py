@@ -17,7 +17,7 @@ import random
 # flags
 SAVE_IMAGES = 0
 SHOW_PROCESSED_IMAGE = 0
-SHOW_RAW_IMAGE = 0
+SHOW_RAW_IMAGE = 1
 
 field_x1 = 227
 field_x2 = 285
@@ -67,10 +67,14 @@ def process_img(original_img):
     else:
         field_type = 0
 
-    if SHOW_RAW_IMAGE:
-        cv2.imshow('color img', processed_img)
-
+    processed_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
     processed_img = cv2.Canny(processed_img, threshold1=50, threshold2=500)
+
+    processed_img, contours, hierarchy = cv2.findContours(processed_img,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    print(contours)
+
+    cv2.drawContours(processed_img, contours, -1, (255,255,0), 1)
+    cv2.imshow('contours', processed_img)     
     return processed_img, field_type
 
 def click(x,y):
@@ -142,7 +146,9 @@ while(True):
     while(True):
         
         # each field
-        screen = get_screen(227+counter_x*x_size,155+y_size*counter_y,285+counter_x*x_size,214+y_size*counter_y)
+        #screen = get_screen(227+counter_x*x_size,155+y_size*counter_y,285+counter_x*x_size,214+y_size*counter_y)
+
+        screen = get_screen()
 
         # all fields
         #screen = get_screen((227,157,733,665)
@@ -160,7 +166,7 @@ while(True):
         
 
         if SHOW_PROCESSED_IMAGE:
-            cv2.imshow('window', processed_screen)
+            cv2.imshow('processed image', processed_screen)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             cv2.destroyAllWindows()

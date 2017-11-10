@@ -32,13 +32,13 @@ def calc_center_points(num_x, num_y, distance, start_x, start_y, end_x, end_y):
         for x_count in range(small_half_x):
             x = int(start_x - distance * x_count)
             y = int(start_y - distance * y_count)
-            calc_center.append([x,y])
+            calc_center.append([x,y,num_x-x_count,num_y-y_count])
 
     for y_count in range(num_y):
         for x_count in range(big_half_x):
             x = int(end_x + distance * x_count)
             y = int(end_y + distance * y_count)
-            calc_center.append([x,y])
+            calc_center.append([x,y,x_count+1,y_count+1])
         
     return calc_center
 
@@ -159,7 +159,7 @@ def get_centers():
     if SAVE_IMAGES:
         draw_center_points(calc_center,original_img,diff)
 
-    return (calc_center, diff)
+    return (calc_center, diff, y_fields, x_fields)
 
 if __name__ == "__main__":
     get_centers()

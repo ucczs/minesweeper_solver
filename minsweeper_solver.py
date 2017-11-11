@@ -2,6 +2,9 @@
 # - when no more solution is found, guess a field with high chance of no bomb (number/surrounding 9's)
 # - track which fields are already pressed --> dont press them again
 # - track which fields are already recognized (number or 0) --> dont scan them again
+# - improve solving algorithms
+# - reduce overhead in function get_surrounding_coordinates and get_touching_fields
+# - test new algorithm and created functions
 
 import numpy as np
 from PIL import ImageGrab
@@ -97,6 +100,15 @@ def check_stop_criteria(result):
                 return stop_crit
     return stop_crit
 
+def get_surrounding_coordinates(x,y,x_fields,y_fields):
+    surrounding_coordinates = []
+    for x_pos in range(x-1,x+2):
+        for y_pos in range(y-1,y+2):
+            if x_pos >= 0 and x_pos < x_fields and y_pos >= 0 and y_pos < y_fields and (x_pos != x or y_pos != y):
+                surrounding_coordinates.append([y_pos,x_pos])                            
+    return surrounding_coordinates
+
+
 def main():
     [calc_center, distance, y_fields, x_fields] = map_generator.get_centers()
 
@@ -107,7 +119,7 @@ def main():
     y_start=random.randrange(y_fields)
     #print('y=' + str(y_start))
     #print('x=' + str(x_start))
-    click_field(x_start,y_start,calc_center)    
+    #click_field(x_start,y_start,calc_center)    
 
     counter_x = 0
     counter_y = 0
@@ -137,7 +149,11 @@ def main():
             cv2.imwrite(file,processed_screen)
 
 
-        # when a shown number touches the same number of hidden fields, these fields are bombs
+        ####### Solving algorithm starts here ######
+
+        ## Detect bombs ##
+
+        # when a shown number touches the same number of hidden fields (9), these fields are bombs
         # write the bombs into the result list as 10
         for y in range(y_fields):
             for x in range(x_fields):
@@ -153,6 +169,8 @@ def main():
                     result[y][x]=10
 
 
+        ## Algorithm 1 ##
+
         # when shown number touches the same number of bombs, you can open all the other covered fields
         for y in range(y_fields):
             for x in range(x_fields):
@@ -164,21 +182,19 @@ def main():
                         click_field(element[1], element[0], calc_center)
 
 
-        # Lösungsalgo 2 stimmt die ??
-        # wenn zwei benachbarte zahlen
-        # wenn differenz von außerhalb der schnittmenge der größeren Zahl und die größere zahl
-        # minus bereits berührende bombe
-        # kleiner gleich der kleineren zahl minus bereits berührender bomben
-        # ist, dann öffne alle felder die außerhalb der 
-        # schnittmenge der kleineren zahl
+        ## Algorithm 2 ##
 
-
-        # solving algorithm 1:
-        # find neighbours which have the same number minus bombs
-        # get coordinates of touching 9's
-        # if coordinates of touching 9's from one field are a subset of the coordinates
-        # of the touching 9's from the other field
-        # all other touching fields can be opened 
+        # Explanation:
+        # - find neighbours which have the same number minus bombs
+        # - get coordinates of touching 9's
+        # - if coordinates of touching 9's from one field are a subset of the coordinates
+        #   of the touching 9's from the other field
+        # - all other touching fields can be opened
+        # example:
+        # 9 9 9 ..
+        # 1 1 2 ..
+        # 0 0 0 ..
+        # the upper right 9 is a field without a bomb
 
         # create list with number of not discovered bombs
         found_candidates = []
@@ -221,9 +237,77 @@ def main():
                         if element_open not in smaller_touching:
                             click_field(element_open[1], element_open[0],calc_center)
 
+
+        # Lösungsalgo stimmt die ??
+        # wenn zwei benachbarte zahlen
+        # wenn differenz von außerhalb der schnittmenge der größeren Zahl und die größere zahl
+        # minus bereits berührende bombe
+        # kleiner gleich der kleineren zahl minus bereits berührender bomben
+        # ist, dann öffne alle felder die außerhalb der 
+        # schnittmenge der kleineren zahl
+
+        ## Algorithm 2 ##
+        # NoX = shown number of field X
+        # BX = touching bombs of field X
+        # TX = touching 9's of field X
+        # SXY = intersection of touching 9's of field X and Y
+        #
+        # if No2 - B2 - (T2 - S12) > No1 - B1
+        # then open all fields which are (T1 - S12)
+        # Example:
+        # 0 0 0 0 ..
+        # 0 1 2 0 ..
+        # 9 9 9 9 ..
+        # lower left 9 is a field without a bomb
+
+
+        # go through all fields
+        for y in range(y_fields):
+            for x in range(x_fields):
+                surrounding_coordinates = get_surrounding_coordinates(x,y,x_fields,y_fields)
+                # go through all neightbors and check if a field is save
+                for neightbor_coord in surrounding_coordinates:
+                    # both fields must touch unknown bombs
+                    if not_found_bombs[y][x] > 0 and not_found_bombs[y][x] < 9 and not_found_bombs[neightbor_coord[0]][neightbor_coord[1]] > 0 and not_found_bombs[neightbor_coord[0]][neightbor_coord[1]] < 9:
+                        
+                        neighbour_fields_hidden = get_touching_fields(result,9,neightbor_coord[1],neightbor_coord[0],x_fields,y_fields)
+                        fields_hidden = get_touching_fields(result,9,x,y,x_fields,y_fields)
+
+                        subset_surrounding = create_subset(fields_hidden,neighbour_fields_hidden)
+
+                        bombs_in_inter = not_found_bombs[y][x] - (len(fields_hidden) - len(subset_surrounding))
+
+                        if bombs_in_inter >= not_found_bombs[neightbor_coord[0]][neightbor_coord[1]]:
+                            save_fields = create_not_in_subset(neighbour_fields_hidden,subset_surrounding)
+                            for open_field in save_fields:
+                                click_field(open_field[1],open_field[0],calc_center)
+
+
+        # stop skript when stop criteria is fulfilled
         if check_stop_criteria(result):
             solving_in_progress = False
 
+# return all fields which are in set1 and set2
+def create_subset(set_1,set_2):
+    subset = []
+    for coordinates_1 in set_1:
+        for coordinates_2 in set_2:
+            if coordinates_1[0] == coordinates_2[0] and coordinates_1[1] == coordinates_2[1]:
+                subset.append([coordinates_1[0],coordinates_1[1]])
+    return subset
+
+# return all fields which are only in one of the sets
+def create_not_in_subset(set_1,set_2):
+    not_subset = []
+    for coordinates_1 in set_1:
+        if not(coordinates_1 in set_2):
+            not_subset.append([coordinates_1[0],coordinates_1[1]])
+    for coordinates_2 in set_2:
+        if not(coordinates_2 in set_1):
+            not_subset.append([coordinates_2[0],coordinates_2[1]])            
+
+
+    return not_subset
 
 if __name__ == "__main__":
     main()        

@@ -8,3 +8,4 @@ The map of the game is recognized automatically by scanning the screen. Then the
 Planned improvements:
 - optimize map recognition, espacially recognition of 6
 - optimize performance to break the record
+- if no logical solution is found, try bruteforce before guessing

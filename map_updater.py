@@ -96,7 +96,7 @@ def identify_number_color(field_img,distance,counter):
             #cv2.imwrite(filename,field_img)
             #print(avg_color_all)
             #print(counter)
-            print(avg_color_all)
+            #print(avg_color_all)
         
     #filename = 'D:/GitHub/minesweeper_solver/Contours/indetifyno_' + str(found_number) + '_' + str(counter) + '.jpg'
     #cv2.imwrite(filename,field_img)    
@@ -106,13 +106,14 @@ def identify_number_color(field_img,distance,counter):
 
 
 
-def update_map(calc_center, distance):
+def update_map(calc_center, distance, identified_fields, result):
     counter = 0
     
-    time.sleep(0.5)
+    time.sleep(0.4)
     screen = map_generator.get_screen()
 
-    updated_map = initialize_map(calc_center)
+    #updated_map = initialize_map(calc_center)
+    updated_map = result
 
     for center in calc_center:
         top_corner_x = int(center[0]+0.25*distance)
@@ -123,22 +124,28 @@ def update_map(calc_center, distance):
         part_screen = screen[bottom_corner_y:top_corner_y, bottom_corner_x:top_corner_x]
 
         x=center[2]-1
-        y=center[3]-1      
-        updated_map[y][x] = identify_type(part_screen,counter)
+        y=center[3]-1 
+        if not([y,x] in identified_fields):     
+            updated_map[y][x] = identify_type(part_screen,counter)
 
         if updated_map[y][x] != 9 and updated_map[y][x] != 0:
-            counter = counter + 1
-            updated_map[y][x] = identify_number_color(part_screen,distance,counter)
-            #print('x=' + str(x) + ' ,y=' + str(y))
+            if [y,x] in identified_fields:
+                continue
+            else:
+                counter = counter + 1
+                updated_map[y][x] = identify_number_color(part_screen,distance,counter)
+                #print('x=' + str(x) + ' ,y=' + str(y))
+                if updated_map[y][x] != 15:
+                    identified_fields.append([y,x])
 
         if SAVE_FIELD:
             counter = counter + 1
             filename = 'D:/GitHub/minesweeper_solver/DEBUG/part_pic_' + str(counter) + '.jpg'
             cv2.imwrite(filename,part_screen)
 
-    print_map(updated_map)
+    #print_map(updated_map)
 
-    return updated_map
+    return (updated_map, identified_fields)
 
 
 if __name__ == "__main__":

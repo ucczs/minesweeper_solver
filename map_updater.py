@@ -110,7 +110,7 @@ def update_map(calc_center, distance, identified_fields, result):
     counter = 0
     
     # pause because of animation of field opening
-    time.sleep(1)
+    time.sleep(0.5)
     screen = map_generator.get_screen()
 
     #updated_map = initialize_map(calc_center)

@@ -109,7 +109,8 @@ def identify_number_color(field_img,distance,counter):
 def update_map(calc_center, distance, identified_fields, result):
     counter = 0
     
-    time.sleep(0.4)
+    # pause because of animation of field opening
+    time.sleep(1)
     screen = map_generator.get_screen()
 
     #updated_map = initialize_map(calc_center)

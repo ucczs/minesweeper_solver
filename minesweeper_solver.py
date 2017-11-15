@@ -1,6 +1,8 @@
 # ideas:
 # - track which fields are already pressed --> dont press them again
 # - reduce overhead in function get_surrounding_coordinates and get_touching_fields
+# - include 6 recognition
+# - check pattern improve idea
 
 import numpy as np
 from PIL import ImageGrab
@@ -176,10 +178,27 @@ def detect_bombs_complex(result, x_fields, y_fields):
                             
     return result
 
+def check_pattern_criteria(result,x,y, x_fields, y_fields,direction):
+    valid = 0
+    
+    if direction == 0:
+        if result[y][x] == 1 and result[y-1][x] == 9 and result[y+1][x] == 9:
+            valid = 0
+        else:
+            valid = 1
+    elif direction == 1:
+        if result[y][x] == 1 and result[y][x-1] == 9 and result[y][x+1] == 9:
+            valid = 0
+        else:
+            valid = 1
+
+    return valid        
+
 ## Detect bombs 3 ##
 # detect bombs with some common patterns
 def detect_bombs_with_patterns(result, x_fields, y_fields, not_found_bombs):
     
+    # if result is 1 and both are 9 dont decide
 
     # pattern 1:
     # 1 2 1
@@ -193,33 +212,34 @@ def detect_bombs_with_patterns(result, x_fields, y_fields, not_found_bombs):
         try:
             # pattern in x direction
             if pat[2] == 0:
-                if result[pat[0]-1][pat[1]] == 9 :
-                    result[pat[0]-1][pat[1]] = 10
-                    result[pat[0]-1][pat[1]-2] = 10
-                    print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]))   
-                    print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]-2))                       
-                elif result[pat[0]+1][pat[1]] == 9:
-                    result[pat[0]+1][pat[1]] = 10
-                    result[pat[0]+1][pat[1]-2] = 10   
-                    print('Bomb found: y=' + str(pat[0]+1) + ' x=' + str(pat[1]))   
-                    print('Bomb found: y=' + str(pat[0]+1) + ' x=' + str(pat[1]-2))                           
+                if check_pattern_criteria(result,pat[1],pat[0], x_fields, y_fields,0) and check_pattern_criteria(result,pat[1]-2,pat[0], x_fields, y_fields,0):
+                    if result[pat[0]-1][pat[1]] == 9 :
+                        result[pat[0]-1][pat[1]] = 10
+                        result[pat[0]-1][pat[1]-2] = 10
+                        print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]))   
+                        print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]-2))                       
+                    elif result[pat[0]+1][pat[1]] == 9:
+                        result[pat[0]+1][pat[1]] = 10
+                        result[pat[0]+1][pat[1]-2] = 10   
+                        print('Bomb found: y=' + str(pat[0]+1) + ' x=' + str(pat[1]))   
+                        print('Bomb found: y=' + str(pat[0]+1) + ' x=' + str(pat[1]-2))                           
         except:
             pass         
 
         try:
             # pattern in y direction
             if pat[2] == 1:   
-                a = result[pat[0]][pat[1]-1]         
-                if result[pat[0]][pat[1]-1] == 9:
-                    result[pat[0]][pat[1]-1] = 10
-                    result[pat[0]-2][pat[1]-1] = 10    
-                    print('Bomb found: y=' + str(pat[0]-2) + ' x=' + str(pat[1]-1))   
-                    print('Bomb found: y=' + str(pat[0]) + ' x=' + str(pat[1]-1))   
-                elif result[pat[0]][pat[1]+1] == 9:
-                    result[pat[0]][pat[1]+1] = 10
-                    result[pat[0]-2][pat[1]+1] = 10 
-                    print('Bomb found: y=' + str(pat[0]) + ' x=' + str(pat[1]-1)+1)   
-                    print('Bomb found: y=' + str(pat[0]-2) + ' x=' + str(pat[1]+1))                            
+                if check_pattern_criteria(result,pat[1],pat[0], x_fields, y_fields,1) and check_pattern_criteria(result,pat[1],pat[0]-2, x_fields, y_fields,1):
+                    if result[pat[0]][pat[1]-1] == 9:
+                        result[pat[0]][pat[1]-1] = 10
+                        result[pat[0]-2][pat[1]-1] = 10    
+                        print('Bomb found: y=' + str(pat[0]-2) + ' x=' + str(pat[1]-1))   
+                        print('Bomb found: y=' + str(pat[0]) + ' x=' + str(pat[1]-1))   
+                    elif result[pat[0]][pat[1]+1] == 9:
+                        result[pat[0]][pat[1]+1] = 10
+                        result[pat[0]-2][pat[1]+1] = 10 
+                        print('Bomb found: y=' + str(pat[0]) + ' x=' + str(pat[1]-1)+1)   
+                        print('Bomb found: y=' + str(pat[0]-2) + ' x=' + str(pat[1]+1))                            
         except:
             pass                                   
 
@@ -230,34 +250,36 @@ def detect_bombs_with_patterns(result, x_fields, y_fields, not_found_bombs):
     found_pattern = check_pattern(not_found_bombs,pattern_2,x_fields,y_fields)
     for pat in found_pattern:
         try:
-        # pattern in x direction
+        # pattern in x direction        
             if pat[2] == 0:
-                if result[pat[0]-1][pat[1]-1] == 9:
-                    result[pat[0]-1][pat[1]-1] = 10
-                    result[pat[0]-1][pat[1]-2] = 10
-                    print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]-1))   
-                    print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]-2))                     
-                elif result[pat[0]+1][pat[1]-1] == 9:
-                    result[pat[0]+1][pat[1]-1] = 10
-                    result[pat[0]+1][pat[1]-2] = 10  
-                    print('Bomb found: y=' + str(pat[0]+1) + ' x=' + str(pat[1]-1))   
-                    print('Bomb found: y=' + str(pat[0]+1) + ' x=' + str(pat[1]-2))                             
+                if check_pattern_criteria(result,pat[1]-1,pat[0], x_fields, y_fields,0) and check_pattern_criteria(result,pat[1]-2,pat[0], x_fields, y_fields,0):                
+                    if result[pat[0]-1][pat[1]-1] == 9:
+                        result[pat[0]-1][pat[1]-1] = 10
+                        result[pat[0]-1][pat[1]-2] = 10
+                        print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]-1))   
+                        print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]-2))                     
+                    elif result[pat[0]+1][pat[1]-1] == 9:
+                        result[pat[0]+1][pat[1]-1] = 10
+                        result[pat[0]+1][pat[1]-2] = 10  
+                        print('Bomb found: y=' + str(pat[0]+1) + ' x=' + str(pat[1]-1))   
+                        print('Bomb found: y=' + str(pat[0]+1) + ' x=' + str(pat[1]-2))                             
         except:
             pass                                 
 
         try:
             # pattern in y direction
-            if pat[2] == 1:        
-                if result[pat[0]-1][pat[1]-1] == 9:
-                    result[pat[0]-1][pat[1]-1] = 10
-                    result[pat[0]-2][pat[1]-1] = 10   
-                    print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]-1))   
-                    print('Bomb found: y=' + str(pat[0]-2) + ' x=' + str(pat[1]-1))                            
-                elif result[pat[0]-1][pat[1]+1] == 9:
-                    result[pat[0]-1][pat[1]+1] = 10
-                    result[pat[0]-2][pat[1]+1] = 10     
-                    print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]+1))   
-                    print('Bomb found: y=' + str(pat[0]-2) + ' x=' + str(pat[1]+1))                         
+            if pat[2] == 1:      
+                if check_pattern_criteria(result,pat[1],pat[0]-1, x_fields, y_fields,1) and check_pattern_criteria(result,pat[1],pat[0]-2, x_fields, y_fields,1):                  
+                    if result[pat[0]-1][pat[1]-1] == 9:
+                        result[pat[0]-1][pat[1]-1] = 10
+                        result[pat[0]-2][pat[1]-1] = 10   
+                        print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]-1))   
+                        print('Bomb found: y=' + str(pat[0]-2) + ' x=' + str(pat[1]-1))                            
+                    elif result[pat[0]-1][pat[1]+1] == 9:
+                        result[pat[0]-1][pat[1]+1] = 10
+                        result[pat[0]-2][pat[1]+1] = 10     
+                        print('Bomb found: y=' + str(pat[0]-1) + ' x=' + str(pat[1]+1))   
+                        print('Bomb found: y=' + str(pat[0]-2) + ' x=' + str(pat[1]+1))                         
         except:
             pass                          
 
@@ -447,19 +469,24 @@ def first_move(calc_center,x_fields,y_fields):
 # the field with the lowest probability will be pressed
 def perform_guess_click(result,calc_center,x_fields,y_fields,not_found_bombs):
     
-    probability_map = [[1 for x in range(x_fields)] for y in range(y_fields)]
+    probability_map = [[-1 for x in range(x_fields)] for y in range(y_fields)]
     for y in range(y_fields):
         for x in range(x_fields):  
             if result[y][x] == 9:
                 surrounding_coordinates = get_surrounding_coordinates(x,y,x_fields,y_fields)
                 for coordinates in surrounding_coordinates:
-                    probability = 1
+                    probability = -1
                     touching_fields = count_surrounding(result, 9, coordinates[1], coordinates[0], x_fields, y_fields)
                     if result[coordinates[0]][coordinates[1]] > 0 and result[coordinates[0]][coordinates[1]] < 9 and touching_fields>0:
                         probability = not_found_bombs[coordinates[0]][coordinates[1]] / touching_fields
 
-                    if probability < probability_map[y][x] and probability>0:
+                    if probability > probability_map[y][x] and probability>0:
                         probability_map[y][x] = probability
+
+    for y in range(y_fields):
+        for x in range(x_fields):   
+            if probability_map[y][x] == -1:
+                probability_map[y][x] = 1                      
 
     (min_y, min_x) = find_coordinates_of_minimum(probability_map, x_fields, y_fields)
 

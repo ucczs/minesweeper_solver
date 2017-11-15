@@ -522,7 +522,11 @@ def main():
     last_time = time.time()
 
     solving_in_progress = True
-    while(solving_in_progress):
+    
+    last_curpos = win32api.GetCursorPos()        
+    
+    
+    while(True):               
 
         (result, identified_fields) = map_updater.update_map(calc_center, distance,identified_fields, result)
 
@@ -541,6 +545,11 @@ def main():
         ## Open fields without bombs
         not_found_bombs = create_not_found_bombs_list(result, x_fields, y_fields)
 
+        curpos = win32api.GetCursorPos() 
+        if last_curpos != curpos:
+            print('Mouse moved')
+            break
+
         clicks_1 = open_obvious_fields(result, calc_center, x_fields, y_fields)
         clicks_2 = open_fields_complex_1(result, calc_center, x_fields, y_fields,not_found_bombs)
         clicks_3 = open_fields_complex_2(result, calc_center, x_fields, y_fields,not_found_bombs)
@@ -555,9 +564,12 @@ def main():
         else:
             no_click = 0
 
+        last_curpos = win32api.GetCursorPos() 
+
         # stop skript when stop criteria is fulfilled
         if check_stop_criteria(result):
-            solving_in_progress = False
+            print('No 9s in map')
+            break
 
         for y in range(y_fields):
             for x in range(x_fields):        
@@ -565,7 +577,8 @@ def main():
                     counter_15 = counter_15 + 1
         
         if counter_15 > counter_15_pre+0.25*x_fields*y_fields:
-            solving_in_progress = False
+            print('Too much 15')
+            break
 
         print('Loop took {} seconds'.format(time.time()-last_time))
         last_time = time.time()

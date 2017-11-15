@@ -9,3 +9,4 @@ Planned improvements:
 - optimize map recognition, especially '6' and '7'
 - improve solving algorithm with more complex structures
 - check if try except is very slow
+- stop script when mouse is moved

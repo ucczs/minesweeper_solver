@@ -75,28 +75,32 @@ def identify_number_color(field_img,distance,counter):
     
         #print(avg_color_all)
 
-        # 1: [<100 >200 >200]
+        # 1: [<100 >180 >200]
         if avg_color_all[0] < 100 and avg_color_all[1] > 180 and avg_color_all[2] > 200:
             found_number = 1
-        # 2: [<100 >200 <100]
-        elif avg_color_all[0] < 150 and avg_color_all[1] > 150 and avg_color_all[2] < 100:
+        # 2: [75<x<150 >150 <100]
+        elif avg_color_all[0] > 80 and avg_color_all[0] < 150 and avg_color_all[1] > 150 and avg_color_all[2] < 100:
             found_number = 2
         # 3: [>200 <100 100<x<200]
         elif avg_color_all[0] > 200 and avg_color_all[1] < 100 and avg_color_all[2] < 200 and avg_color_all[2] > 100:
             found_number = 3    
-        # 4: [<100 <100 >200]
+        # 4: [<100 <130 >195]
         elif avg_color_all[0] < 100 and avg_color_all[1] < 130 and avg_color_all[2] > 195:
             found_number = 4
-        # 5: [>200 <100 <100] (ähnlich zu 3)
+        # 5: [>180 <100 <100] (ähnlich zu 3)
         elif avg_color_all[0] > 180 and avg_color_all[1] < 100 and avg_color_all[2] < 100:
             found_number = 5
+        # 6: [<75 <200 <100] (ähnlich zu 3)
+        elif avg_color_all[0] < 80 and avg_color_all[1] > 150 and avg_color_all[2] < 100:
+            found_number = 6          
         else:
             found_number = 15
-            #filename = 'D:/GitHub/minesweeper_solver/Contours/part_pic_' + str(found_number) + '_' + str(counter) + '.jpg'
+            #filename = 'D:/GitHub/minesweeper_solver/Contours/part_pic_' + str(avg_color_all[0]) + '_' + str(avg_color_all[1]) + '_' + str(avg_color_all[2]) + '_' + str(counter) + '.jpg'
             #cv2.imwrite(filename,field_img)
             #print(avg_color_all)
             #print(counter)
-            #print(avg_color_all)
+
+
         
     #filename = 'D:/GitHub/minesweeper_solver/Contours/indetifyno_' + str(found_number) + '_' + str(counter) + '.jpg'
     #cv2.imwrite(filename,field_img)    
@@ -110,7 +114,8 @@ def update_map(calc_center, distance, identified_fields, result):
     counter = 0
     
     # pause because of animation of field opening
-    time.sleep(0.5)
+    time.sleep(0.1)
+
     screen = map_generator.get_screen()
 
     #updated_map = initialize_map(calc_center)
@@ -134,8 +139,9 @@ def update_map(calc_center, distance, identified_fields, result):
                 continue
             else:
                 counter = counter + 1
-                updated_map[y][x] = identify_number_color(part_screen,distance,counter)
                 #print('x=' + str(x) + ' ,y=' + str(y))
+                updated_map[y][x] = identify_number_color(part_screen,distance,counter)
+                
                 if updated_map[y][x] != 15:
                     identified_fields.append([y,x])
 
@@ -145,6 +151,7 @@ def update_map(calc_center, distance, identified_fields, result):
             cv2.imwrite(filename,part_screen)
 
     #print_map(updated_map)
+
 
     return (updated_map, identified_fields)
 

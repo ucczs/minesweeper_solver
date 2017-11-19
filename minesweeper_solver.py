@@ -1,7 +1,5 @@
 # ideas:
 # - track which fields are already pressed --> dont press them again
-# - reduce overhead in function get_surrounding_coordinates and get_touching_fields
-# - include 6 recognition
 # - check pattern improve idea
 
 import numpy as np
@@ -95,17 +93,6 @@ def get_touching_fields(result, searching_for, x_pos, y_pos, x_fields, y_fields)
             found_pos.append([y_pos+1,x_pos+1])  
 
     return found_pos   
-
-
-# checks if there are just 9 in the map --> stop
-def check_stop_criteria(result):
-    stop_crit = True
-    for row in result:
-        for num in row:
-            if num < 9:
-                stop_crit = False
-                return stop_crit
-    return stop_crit
 
 
 # returns coordinates of the fields which touches field x/y
@@ -513,8 +500,7 @@ def main():
 
     result = [[9 for x in range(x_fields)] for y in range(y_fields)]
     identified_fields = []
-    counter_15 = 0
-    counter_15_pre = 0 
+    counter_9 = 0
     no_click = 0   
 
     first_move(calc_center,x_fields,y_fields)
@@ -525,6 +511,9 @@ def main():
     
     last_curpos = win32api.GetCursorPos()        
     
+    # Time for open large field
+    time.sleep(0.1)
+
     
     while(True):               
 
@@ -566,24 +555,20 @@ def main():
 
         last_curpos = win32api.GetCursorPos() 
 
-        # stop skript when stop criteria is fulfilled
-        if check_stop_criteria(result):
-            print('No 9s in map')
-            break
+        #print_map(result)
 
+        counter_9 = 0
         for y in range(y_fields):
             for x in range(x_fields):        
-                if result[y][x] == 15:
-                    counter_15 = counter_15 + 1
+                if result[y][x] == 9:
+                    counter_9 = counter_9 + 1
         
-        if counter_15 > counter_15_pre+0.25*x_fields*y_fields:
-            print('Too much 15')
+        if counter_9 == 0:
+            print('No open fields! Win!!')
             break
 
         print('Loop took {} seconds'.format(time.time()-last_time))
         last_time = time.time()
-
-        #print_map(result)
 
 
 if __name__ == "__main__":
